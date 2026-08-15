@@ -38,7 +38,6 @@ export function PriceChart({ data }: PriceChartProps) {
     new Set(data.map((d) => d.supermarket.id))
   );
 
-  // Collect all data points from visible series
   const allPoints = useMemo(() => {
     const points: { date: string; price: number; smId: string }[] = [];
     for (const series of data) {
@@ -50,7 +49,6 @@ export function PriceChart({ data }: PriceChartProps) {
     return points;
   }, [data, visibleSeries]);
 
-  // Compute scales
   const { minPrice, maxPrice, minDate, maxDate, dateRange } = useMemo(() => {
     if (allPoints.length === 0) {
       return { minPrice: 0, maxPrice: 1, minDate: 0, maxDate: 1, dateRange: 1 };
@@ -78,7 +76,6 @@ export function PriceChart({ data }: PriceChartProps) {
     return PAD.top + PLOT_H - ((price - minPrice) / (maxPrice - minPrice)) * PLOT_H;
   };
 
-  // Build SVG path for each series
   const seriesPaths = useMemo(() => {
     return data
       .filter((d) => visibleSeries.has(d.supermarket.id))
@@ -107,7 +104,6 @@ export function PriceChart({ data }: PriceChartProps) {
       });
   }, [data, visibleSeries, minPrice, maxPrice, minDate, maxDate, dateRange]);
 
-  // Y-axis ticks
   const yTicks = useMemo(() => {
     const ticks: { y: number; label: string }[] = [];
     const steps = 5;
@@ -118,7 +114,6 @@ export function PriceChart({ data }: PriceChartProps) {
     return ticks;
   }, [minPrice, maxPrice, minDate, maxDate, dateRange]);
 
-  // X-axis ticks (approx 6 evenly spaced)
   const xTicks = useMemo(() => {
     if (dateRange < 1) return [];
     const ticks: { x: number; label: string }[] = [];
@@ -142,11 +137,9 @@ export function PriceChart({ data }: PriceChartProps) {
       return;
     }
 
-    // Find the closest date
     const t = minDate + ((mouseX - PAD.left) / PLOT_W) * dateRange;
     const targetDate = new Date(t).toISOString();
 
-    // For each visible series, find the point closest to this date
     const entries: { supermarketName: string; color: string; price: number }[] = [];
     let closestX = mouseX;
     let closestY = PAD.top;
@@ -235,7 +228,7 @@ export function PriceChart({ data }: PriceChartProps) {
 
   if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+      <div className="flex h-48 items-center justify-center text-sm text-slate-500">
         Sin datos de historial para mostrar
       </div>
     );
@@ -253,8 +246,8 @@ export function PriceChart({ data }: PriceChartProps) {
               onClick={() => toggleSeries(series.supermarket.id)}
               className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 active
-                  ? 'bg-white ring-1 ring-slate-200 shadow-sm'
-                  : 'bg-slate-50 text-slate-400 ring-1 ring-transparent'
+                  ? 'border border-slate-700 bg-slate-800 text-slate-200 shadow-sm'
+                  : 'border border-transparent bg-slate-800/30 text-slate-600'
               }`}
             >
               <span
@@ -280,7 +273,7 @@ export function PriceChart({ data }: PriceChartProps) {
           onMouseLeave={() => setHover(null)}
           preserveAspectRatio="xMidYMid meet"
         >
-          {/* Grid lines (horizontal) */}
+          {/* Grid lines */}
           {yTicks.map((tick, i) => (
             <g key={`y-${i}`}>
               <line
@@ -288,14 +281,14 @@ export function PriceChart({ data }: PriceChartProps) {
                 y1={tick.y}
                 x2={PAD.left + PLOT_W}
                 y2={tick.y}
-                stroke="#f1f5f9"
+                stroke="#1e293b"
                 strokeWidth={1}
               />
               <text
                 x={PAD.left - 8}
                 y={tick.y + 4}
                 textAnchor="end"
-                className="fill-slate-400 text-[11px]"
+                className="fill-slate-500 text-[11px]"
               >
                 {tick.label}
               </text>
@@ -309,7 +302,7 @@ export function PriceChart({ data }: PriceChartProps) {
               x={tick.x}
               y={CHART_H - PAD.bottom + 20}
               textAnchor="middle"
-              className="fill-slate-400 text-[11px]"
+              className="fill-slate-500 text-[11px]"
             >
               {tick.label}
             </text>
@@ -337,7 +330,7 @@ export function PriceChart({ data }: PriceChartProps) {
                 y1={PAD.top}
                 x2={hover.x}
                 y2={PAD.top + PLOT_H}
-                stroke="#cbd5e1"
+                stroke="#475569"
                 strokeWidth={1}
                 strokeDasharray="4 4"
               />
@@ -349,7 +342,7 @@ export function PriceChart({ data }: PriceChartProps) {
                     cx={hover.x}
                     cy={y}
                     r={5}
-                    fill="white"
+                    fill="#0f172a"
                     stroke={entry.color}
                     strokeWidth={2.5}
                   />
@@ -362,14 +355,14 @@ export function PriceChart({ data }: PriceChartProps) {
         {/* Tooltip */}
         {hover && hover.entries.length > 0 && (
           <div
-            className="pointer-events-none absolute z-10 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg"
+            className="pointer-events-none absolute z-10 max-w-[calc(100vw-2rem)] rounded-lg border border-slate-700 bg-slate-900/90 px-3 py-2 shadow-xl backdrop-blur-md"
             style={{
               left: `${(hover.x / CHART_W) * 100}%`,
               top: 0,
               transform: `translateX(${hover.x > CHART_W * 0.6 ? '-110%' : '10%'})`,
             }}
           >
-            <p className="mb-1.5 text-xs font-medium text-slate-500">
+            <p className="mb-1.5 text-xs font-medium text-slate-400">
               {formatDateFull(hover.date)}
             </p>
             <div className="space-y-1">
@@ -379,8 +372,8 @@ export function PriceChart({ data }: PriceChartProps) {
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: entry.color }}
                   />
-                  <span className="text-slate-600">{entry.supermarketName}</span>
-                  <span className="ml-auto font-semibold text-slate-800">
+                  <span className="text-slate-400">{entry.supermarketName}</span>
+                  <span className="ml-auto font-semibold text-white">
                     {formatPrice(entry.price)}
                   </span>
                 </div>
